@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { checkUser } from "@/lib/checkUser";
 
-const Header = () => {
+const Header = async () => {
+  await checkUser();
   return (
     <header className="fixed top-0 w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800/50 z-50">
       <nav className="container mx-auto px-4 h-20 flex items-center justify-between">

@@ -29,7 +29,6 @@ import {
 import useFetch from "@/hooks/use-fetch";
 import { onboardingSchema } from "@/app/lib/schema";
 import { updateUser } from "@/actions/user";
-import { motion } from "framer-motion";
 
 const OnboardingForm = ({ industries }) => {
   const router = useRouter();
@@ -77,33 +76,21 @@ const OnboardingForm = ({ industries }) => {
   const watchIndustry = watch("industry");
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen"
-    >
-      <Card className="w-full max-w-lg mt-10 mx-2 shadow-lg border-0 rounded-lg overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8">
-          <CardTitle className="text-4xl font-bold">
+    <div className="flex items-center justify-center bg-background">
+      <Card className="w-full max-w-lg mt-10 mx-2">
+        <CardHeader>
+          <CardTitle className="gradient-title text-4xl">
             Complete Your Profile
           </CardTitle>
-          <CardDescription className="text-blue-100 mt-2">
+          <CardDescription>
             Select your industry to get personalized career insights and
             recommendations.
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-8">
+        <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              className="space-y-2"
-            >
-              <Label htmlFor="industry" className="text-gray-700">
-                Industry
-              </Label>
+            <div className="space-y-2 relative">
+              <Label htmlFor="industry">Industry</Label>
               <Select
                 onValueChange={(value) => {
                   setValue("industry", value);
@@ -113,20 +100,14 @@ const OnboardingForm = ({ industries }) => {
                   setValue("subIndustry", "");
                 }}
               >
-                <SelectTrigger id="industry" className="bg-white">
+                <SelectTrigger id="industry">
                   <SelectValue placeholder="Select an industry" />
                 </SelectTrigger>
-                <SelectContent className="bg-white">
+                <SelectContent className="absolute z-50 bg-white dark:bg-gray-900 shadow-lg">
                   <SelectGroup>
-                    <SelectLabel className="text-gray-700">
-                      Industries
-                    </SelectLabel>
+                    <SelectLabel>Industries</SelectLabel>
                     {industries.map((ind) => (
-                      <SelectItem
-                        key={ind.id}
-                        value={ind.id}
-                        className="hover:bg-blue-50"
-                      >
+                      <SelectItem key={ind.id} value={ind.id}>
                         {ind.name}
                       </SelectItem>
                     ))}
@@ -138,35 +119,22 @@ const OnboardingForm = ({ industries }) => {
                   {errors.industry.message}
                 </p>
               )}
-            </motion.div>
+            </div>
 
             {watchIndustry && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-                className="space-y-2"
-              >
-                <Label htmlFor="subIndustry" className="text-gray-700">
-                  Specialization
-                </Label>
+              <div className="space-y-2 relative">
+                <Label htmlFor="subIndustry">Specialization</Label>
                 <Select
                   onValueChange={(value) => setValue("subIndustry", value)}
                 >
-                  <SelectTrigger id="subIndustry" className="bg-white">
+                  <SelectTrigger id="subIndustry">
                     <SelectValue placeholder="Select your specialization" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white">
+                  <SelectContent className="absolute z-50 bg-white dark:bg-gray-900 shadow-lg">
                     <SelectGroup>
-                      <SelectLabel className="text-gray-700">
-                        Specializations
-                      </SelectLabel>
+                      <SelectLabel>Specializations</SelectLabel>
                       {selectedIndustry?.subIndustries.map((sub) => (
-                        <SelectItem
-                          key={sub}
-                          value={sub}
-                          className="hover:bg-blue-50"
-                        >
+                        <SelectItem key={sub} value={sub}>
                           {sub}
                         </SelectItem>
                       ))}
@@ -178,25 +146,17 @@ const OnboardingForm = ({ industries }) => {
                     {errors.subIndustry.message}
                   </p>
                 )}
-              </motion.div>
+              </div>
             )}
 
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 }}
-              className="space-y-2"
-            >
-              <Label htmlFor="experience" className="text-gray-700">
-                Years of Experience
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="experience">Years of Experience</Label>
               <Input
                 id="experience"
                 type="number"
                 min="0"
                 max="50"
                 placeholder="Enter years of experience"
-                className="bg-white"
                 {...register("experience")}
               />
               {errors.experience && (
@@ -204,75 +164,50 @@ const OnboardingForm = ({ industries }) => {
                   {errors.experience.message}
                 </p>
               )}
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.8 }}
-              className="space-y-2"
-            >
-              <Label htmlFor="skills" className="text-gray-700">
-                Skills
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="skills">Skills</Label>
               <Input
                 id="skills"
                 placeholder="e.g., Python, JavaScript, Project Management"
-                className="bg-white"
                 {...register("skills")}
               />
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Separate multiple skills with commas
               </p>
               {errors.skills && (
                 <p className="text-sm text-red-500">{errors.skills.message}</p>
               )}
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 1 }}
-              className="space-y-2"
-            >
-              <Label htmlFor="bio" className="text-gray-700">
-                Professional Bio
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="bio">Professional Bio</Label>
               <Textarea
                 id="bio"
                 placeholder="Tell us about your professional background..."
-                className="h-32 bg-white"
+                className="h-32"
                 {...register("bio")}
               />
               {errors.bio && (
                 <p className="text-sm text-red-500">{errors.bio.message}</p>
               )}
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.2 }}
-            >
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 rounded-lg transition-all duration-300"
-                disabled={updateLoading}
-              >
-                {updateLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Complete Profile"
-                )}
-              </Button>
-            </motion.div>
+            <Button type="submit" className="w-full" disabled={updateLoading}>
+              {updateLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Complete Profile"
+              )}
+            </Button>
           </form>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 };
 
