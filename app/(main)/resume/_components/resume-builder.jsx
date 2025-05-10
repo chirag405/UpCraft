@@ -15,7 +15,6 @@ import { toast } from "sonner";
 import MDEditor from "@uiw/react-md-editor";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { saveResume } from "@/actions/resume";
 import { EntryForm } from "./entry-form";
@@ -24,393 +23,459 @@ import { useUser } from "@clerk/nextjs";
 import { entriesToMarkdown } from "@/app/lib/helper";
 import { resumeSchema } from "@/app/lib/schema";
 import html2pdf from "html2pdf.js/dist/html2pdf.min.js";
+import { ThreeDCard } from "@/components/aceternity/3d-card";
+import { SpotlightEffect } from "@/components/aceternity/spotlight";
 import { motion } from "framer-motion";
+import { GradientText } from "@/components/aceternity/text-effect";
+import { FloatingLabelInput } from "@/components/aceternity/floating-input";
+import { Card, CardContent } from "@/components/ui/card";
 
-export default function ResumeBuilder({ initialContent }) {
-  const [activeTab, setActiveTab] = useState("edit");
-  const [previewContent, setPreviewContent] = useState(initialContent);
+const TYPES = {
+  EXPERIENCE: "Experience",
+  EDUCATION: "Education",
+  PROJECTS: "Projects",
+  SKILLS: "Skills",
+};
+
+export default function ResumeBuilder({ initialData = null }) {
   const { user } = useUser();
-  const [resumeMode, setResumeMode] = useState("preview");
+  const [activeTab, setActiveTab] = useState("builder");
+  const [savingResume, setSavingResume] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [editorHeight, setEditorHeight] = useState("700px");
+  const [alertShown, setAlertShown] = useState(false);
+
+  const defaultValues = initialData || {
+    headline: "",
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    website: "",
+    education: [],
+    experience: [],
+    projects: [],
+    skills: [],
+    additionalInfo: "",
+  };
+
+  useEffect(() => {
+    if (user && !defaultValues.name) {
+      setValue("name", user.fullName || "");
+      setValue("email", user.primaryEmailAddress?.emailAddress || "");
+    }
+  }, [user]);
+
+  const { loading: savingData, fn: saveResumeData } = useFetch(saveResume);
 
   const {
     control,
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(resumeSchema),
-    defaultValues: {
-      contactInfo: {},
-      summary: "",
-      skills: "",
-      experience: [],
-      education: [],
-      projects: [],
-    },
+    defaultValues,
   });
 
-  const {
-    loading: isSaving,
-    fn: saveResumeFn,
-    data: saveResult,
-    error: saveError,
-  } = useFetch(saveResume);
-
-  // Watch form fields for preview updates
   const formValues = watch();
 
-  useEffect(() => {
-    if (initialContent) setActiveTab("preview");
-  }, [initialContent]);
+  const generateMarkdown = () => {
+    let markdown = `# ${formValues.name}\n\n`;
 
-  // Update preview content when form values change
-  useEffect(() => {
-    if (activeTab === "edit") {
-      const newContent = getCombinedContent();
-      setPreviewContent(newContent ? newContent : initialContent);
+    if (formValues.headline) {
+      markdown += `## ${formValues.headline}\n\n`;
     }
-  }, [formValues, activeTab]);
 
-  // Handle save result
-  useEffect(() => {
-    if (saveResult && !isSaving) {
-      toast.success("Resume saved successfully!");
+    // Contact details
+    const contactDetails = [];
+    if (formValues.email) contactDetails.push(`Email: ${formValues.email}`);
+    if (formValues.phone) contactDetails.push(`Phone: ${formValues.phone}`);
+    if (formValues.location)
+      contactDetails.push(`Location: ${formValues.location}`);
+    if (formValues.website)
+      contactDetails.push(
+        `Website: [${formValues.website}](${formValues.website})`
+      );
+
+    if (contactDetails.length > 0) {
+      markdown += contactDetails.join(" | ") + "\n\n";
     }
-    if (saveError) {
-      toast.error(saveError.message || "Failed to save resume");
+
+    // Experience
+    if (formValues.experience.length > 0) {
+      markdown += `## Experience\n\n`;
+      markdown += entriesToMarkdown(formValues.experience);
     }
-  }, [saveResult, saveError, isSaving]);
 
-  const getContactMarkdown = () => {
-    const { contactInfo } = formValues;
-    const parts = [];
-    if (contactInfo.email) parts.push(`📧 ${contactInfo.email}`);
-    if (contactInfo.mobile) parts.push(`📱 ${contactInfo.mobile}`);
-    if (contactInfo.linkedin)
-      parts.push(`💼 [LinkedIn](${contactInfo.linkedin})`);
-    if (contactInfo.twitter) parts.push(`🐦 [Twitter](${contactInfo.twitter})`);
+    // Education
+    if (formValues.education.length > 0) {
+      markdown += `## Education\n\n`;
+      markdown += entriesToMarkdown(formValues.education);
+    }
 
-    return parts.length > 0
-      ? `## <div align="center">${user.fullName}</div>
-        \n\n<div align="center">\n\n${parts.join(" | ")}\n\n</div>`
-      : "";
+    // Projects
+    if (formValues.projects.length > 0) {
+      markdown += `## Projects\n\n`;
+      markdown += entriesToMarkdown(formValues.projects);
+    }
+
+    // Skills
+    if (formValues.skills.length > 0) {
+      markdown += `## Skills\n\n`;
+      markdown += entriesToMarkdown(formValues.skills);
+    }
+
+    // Additional
+    if (formValues.additionalInfo) {
+      markdown += `## Additional Information\n\n${formValues.additionalInfo}\n`;
+    }
+
+    return markdown;
   };
 
-  const getCombinedContent = () => {
-    const { summary, skills, experience, education, projects } = formValues;
-    return [
-      getContactMarkdown(),
-      summary && `## Professional Summary\n\n${summary}`,
-      skills && `## Skills\n\n${skills}`,
-      entriesToMarkdown(experience, "Work Experience"),
-      entriesToMarkdown(education, "Education"),
-      entriesToMarkdown(projects, "Projects"),
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-  };
+  // Generate preview markdown
+  const previewMarkdown = generateMarkdown();
 
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const generatePDF = async () => {
-    setIsGenerating(true);
+  const onSubmit = async (data) => {
     try {
-      const element = document.getElementById("resume-pdf");
+      setSavingResume(true);
+      // Prepare the data for saving
+      const saveData = {
+        ...data,
+        content: previewMarkdown,
+      };
+
+      await saveResumeData(saveData);
+      toast.success("Resume saved successfully!");
+    } catch (error) {
+      toast.error(error.message || "Failed to save resume");
+    } finally {
+      setSavingResume(false);
+    }
+  };
+
+  const exportToPDF = async () => {
+    try {
+      setExportingPdf(true);
+      const element = document.getElementById("resume-preview-content");
+      if (!element) {
+        toast.error("Preview content not found");
+        return;
+      }
+
       const opt = {
-        margin: [15, 15],
-        filename: "resume.pdf",
+        margin: [10, 10],
+        filename: `${formValues.name || "Resume"}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2 },
+        html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       };
 
       await html2pdf().set(opt).from(element).save();
+      toast.success("PDF exported successfully!");
     } catch (error) {
-      console.error("PDF generation error:", error);
+      toast.error("Failed to export PDF: " + error.message);
     } finally {
-      setIsGenerating(false);
+      setExportingPdf(false);
     }
   };
 
-  const onSubmit = async (data) => {
-    try {
-      const formattedContent = previewContent
-        .replace(/\n/g, "\n") // Normalize newlines
-        .replace(/\n\s*\n/g, "\n\n") // Normalize multiple newlines to double newlines
-        .trim();
-
-      console.log(previewContent, formattedContent);
-      await saveResumeFn(previewContent);
-    } catch (error) {
-      console.error("Save error:", error);
+  // Show alert if navigating to preview with no data
+  const handleTabChange = (value) => {
+    if (
+      value === "preview" &&
+      !alertShown &&
+      !(
+        formValues.education.length ||
+        formValues.experience.length ||
+        formValues.projects.length ||
+        formValues.skills.length
+      )
+    ) {
+      toast.warning("Add some sections to see a preview");
+      setAlertShown(true);
+      return;
     }
+    setActiveTab(value);
   };
 
   return (
-    <div
-      data-color-mode="dark"
-      className="min-h-screen bg-gradient-to-b from-slate-900 via-blue-900/20 to-slate-900 p-6"
-    >
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 text-4xl md:text-5xl"
-        >
-          Resume Builder
-        </motion.h1>
-        <div className="flex flex-col md:flex-row gap-2">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Button
-              variant="outline"
-              onClick={handleSubmit(onSubmit)}
-              disabled={isSaving}
-              className="bg-blue-600 hover:bg-blue-700 text-slate-100"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save
-                </>
-              )}
-            </Button>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Button
-              onClick={generatePDF}
-              disabled={isGenerating}
-              className="bg-purple-600 hover:bg-purple-700 text-slate-100"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Generating PDF...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
-                </>
-              )}
-            </Button>
-          </motion.div>
-        </div>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-slate-800/50 border border-slate-700/50">
-          <TabsTrigger
-            value="edit"
-            className="data-[state=active]:bg-slate-700/30 data-[state=active]:text-blue-400"
-          >
-            Form
-          </TabsTrigger>
-          <TabsTrigger
-            value="preview"
-            className="data-[state=active]:bg-slate-700/30 data-[state=active]:text-blue-400"
-          >
-            Markdown
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="edit">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-            {/* Contact Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-slate-300">
-                Contact Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-slate-700/50 rounded-lg bg-slate-800/50">
-                {["email", "mobile", "linkedin", "twitter"].map(
-                  (field, index) => (
-                    <motion.div
-                      key={field}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="space-y-2"
-                    >
-                      <label className="text-sm font-medium text-slate-300">
-                        {field.charAt(0).toUpperCase() + field.slice(1)}
-                      </label>
-                      <Input
-                        {...register(`contactInfo.${field}`)}
-                        type={
-                          field === "email"
-                            ? "email"
-                            : field === "mobile"
-                            ? "tel"
-                            : "url"
-                        }
-                        placeholder={
-                          field === "email"
-                            ? "your@email.com"
-                            : field === "mobile"
-                            ? "+1 234 567 8900"
-                            : field === "linkedin"
-                            ? "https://linkedin.com/in/your-profile"
-                            : "https://twitter.com/your-handle"
-                        }
-                        className="bg-slate-700/30 border-slate-600/50 text-slate-200 focus:ring-blue-500"
-                      />
-                      {errors.contactInfo?.[field] && (
-                        <p className="text-sm text-red-400">
-                          {errors.contactInfo[field].message}
-                        </p>
-                      )}
-                    </motion.div>
-                  )
-                )}
-              </div>
-            </div>
-
-            {/* Summary */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-slate-300">
-                Professional Summary
-              </h3>
-              <Controller
-                name="summary"
-                control={control}
-                render={({ field }) => (
-                  <Textarea
-                    {...field}
-                    className="h-32 bg-slate-700/30 border-slate-600/50 text-slate-200 focus:ring-blue-500"
-                    placeholder="Write a compelling professional summary..."
-                  />
-                )}
-              />
-              {errors.summary && (
-                <p className="text-sm text-red-400">{errors.summary.message}</p>
-              )}
-            </div>
-
-            {/* Skills */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-slate-300">Skills</h3>
-              <Controller
-                name="skills"
-                control={control}
-                render={({ field }) => (
-                  <Textarea
-                    {...field}
-                    className="h-32 bg-slate-700/30 border-slate-600/50 text-slate-200 focus:ring-blue-500"
-                    placeholder="List your key skills..."
-                  />
-                )}
-              />
-              {errors.skills && (
-                <p className="text-sm text-red-400">{errors.skills.message}</p>
-              )}
-            </div>
-
-            {/* Experience, Education, Projects */}
-            {["experience", "education", "projects"].map((section) => (
-              <div key={section} className="space-y-4">
-                <h3 className="text-lg font-medium text-slate-300">
-                  {section.charAt(0).toUpperCase() + section.slice(1)}
-                </h3>
-                <Controller
-                  name={section}
-                  control={control}
-                  render={({ field }) => (
-                    <EntryForm
-                      type={section.charAt(0).toUpperCase() + section.slice(1)}
-                      entries={field.value}
-                      onChange={field.onChange}
-                    />
-                  )}
-                />
-                {errors[section] && (
-                  <p className="text-sm text-red-400">
-                    {errors[section].message}
-                  </p>
-                )}
-              </div>
-            ))}
-          </form>
-        </TabsContent>
-
-        <TabsContent value="preview">
-          {activeTab === "preview" && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <Button
-                variant="outline"
-                type="button"
-                className="mb-4 border-slate-600/50 text-slate-300 hover:bg-slate-700/30"
-                onClick={() =>
-                  setResumeMode(resumeMode === "preview" ? "edit" : "preview")
-                }
+    <div className="space-y-6">
+      <ThreeDCard containerClassName="max-w-5xl mx-auto">
+        <SpotlightEffect className="w-full p-1 rounded-xl">
+          <Card className="bg-gradient-to-br from-slate-900 to-slate-950 border-0 shadow-xl">
+            <CardContent className="p-6">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
               >
-                {resumeMode === "preview" ? (
-                  <>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Resume
-                  </>
-                ) : (
-                  <>
-                    <Monitor className="h-4 w-4 mr-2" />
-                    Show Preview
-                  </>
-                )}
-              </Button>
-            </motion.div>
-          )}
+                <Tabs
+                  defaultValue="builder"
+                  value={activeTab}
+                  onValueChange={handleTabChange}
+                  className="w-full"
+                >
+                  <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold">
+                      <GradientText from="from-blue-400" to="to-purple-500">
+                        Resume Builder
+                      </GradientText>
+                    </h1>
+                    <TabsList className="bg-slate-800/40 border border-slate-700/40">
+                      <TabsTrigger
+                        value="builder"
+                        className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Builder
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="preview"
+                        className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                      >
+                        <Monitor className="h-4 w-4 mr-2" />
+                        Preview
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
 
-          {activeTab === "preview" && resumeMode !== "preview" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex p-3 gap-2 items-center border-2 border-yellow-500/50 text-yellow-400 rounded mb-4 bg-yellow-500/10"
-            >
-              <AlertTriangle className="h-5 w-5" />
-              <span className="text-sm">
-                You will lose edited markdown if you update the form data.
-              </span>
-            </motion.div>
-          )}
+                  <TabsContent value="builder" className="space-y-6">
+                    <form
+                      onSubmit={handleSubmit(onSubmit)}
+                      className="space-y-6"
+                    >
+                      {/* Personal Information */}
+                      <div className="rounded-xl bg-slate-800/20 p-6 border border-slate-700/30">
+                        <h2 className="text-xl font-semibold mb-4 text-slate-200">
+                          Personal Information
+                        </h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <FloatingLabelInput
+                              id="name"
+                              label="Full Name"
+                              error={!!errors.name}
+                              {...register("name")}
+                            />
+                            {errors.name && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.name.message}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <FloatingLabelInput
+                              id="headline"
+                              label="Headline (e.g. Senior Developer)"
+                              error={!!errors.headline}
+                              {...register("headline")}
+                            />
+                            {errors.headline && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.headline.message}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <FloatingLabelInput
+                              id="email"
+                              label="Email"
+                              type="email"
+                              error={!!errors.email}
+                              {...register("email")}
+                            />
+                            {errors.email && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.email.message}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <FloatingLabelInput
+                              id="phone"
+                              label="Phone"
+                              error={!!errors.phone}
+                              {...register("phone")}
+                            />
+                            {errors.phone && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.phone.message}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <FloatingLabelInput
+                              id="location"
+                              label="Location"
+                              error={!!errors.location}
+                              {...register("location")}
+                            />
+                            {errors.location && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.location.message}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <FloatingLabelInput
+                              id="website"
+                              label="Website"
+                              error={!!errors.website}
+                              {...register("website")}
+                            />
+                            {errors.website && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.website.message}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="border border-slate-700/50 rounded-lg overflow-hidden"
-          >
-            <MDEditor
-              value={previewContent}
-              onChange={setPreviewContent}
-              height={800}
-              preview={resumeMode}
-            />
-          </motion.div>
+                      {/* Experience */}
+                      <div className="rounded-xl bg-slate-800/20 p-6 border border-slate-700/30">
+                        <h2 className="text-xl font-semibold mb-4 text-slate-200">
+                          {TYPES.EXPERIENCE}
+                        </h2>
+                        <EntryForm
+                          type={TYPES.EXPERIENCE}
+                          entries={formValues.experience}
+                          onChange={(newEntries) =>
+                            setValue("experience", newEntries)
+                          }
+                        />
+                      </div>
 
-          <div className="hidden">
-            <div id="resume-pdf">
-              <MDEditor.Markdown
-                source={previewContent}
-                style={{
-                  background: "white",
-                  color: "black",
-                  padding: "20px",
-                }}
-              />
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+                      {/* Education */}
+                      <div className="rounded-xl bg-slate-800/20 p-6 border border-slate-700/30">
+                        <h2 className="text-xl font-semibold mb-4 text-slate-200">
+                          {TYPES.EDUCATION}
+                        </h2>
+                        <EntryForm
+                          type={TYPES.EDUCATION}
+                          entries={formValues.education}
+                          onChange={(newEntries) =>
+                            setValue("education", newEntries)
+                          }
+                        />
+                      </div>
+
+                      {/* Projects */}
+                      <div className="rounded-xl bg-slate-800/20 p-6 border border-slate-700/30">
+                        <h2 className="text-xl font-semibold mb-4 text-slate-200">
+                          {TYPES.PROJECTS}
+                        </h2>
+                        <EntryForm
+                          type={TYPES.PROJECTS}
+                          entries={formValues.projects}
+                          onChange={(newEntries) =>
+                            setValue("projects", newEntries)
+                          }
+                        />
+                      </div>
+
+                      {/* Skills */}
+                      <div className="rounded-xl bg-slate-800/20 p-6 border border-slate-700/30">
+                        <h2 className="text-xl font-semibold mb-4 text-slate-200">
+                          {TYPES.SKILLS}
+                        </h2>
+                        <EntryForm
+                          type={TYPES.SKILLS}
+                          entries={formValues.skills}
+                          onChange={(newEntries) =>
+                            setValue("skills", newEntries)
+                          }
+                        />
+                      </div>
+
+                      {/* Additional Info */}
+                      <div className="rounded-xl bg-slate-800/20 p-6 border border-slate-700/30">
+                        <h2 className="text-xl font-semibold mb-4 text-slate-200">
+                          Additional Information
+                        </h2>
+                        <div>
+                          <Controller
+                            name="additionalInfo"
+                            control={control}
+                            render={({ field }) => (
+                              <MDEditor
+                                {...field}
+                                height={200}
+                                textareaProps={{
+                                  placeholder:
+                                    "Add additional information such as certifications, languages, etc. (optional)",
+                                }}
+                              />
+                            )}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex justify-end space-x-4">
+                        <Button
+                          type="submit"
+                          disabled={savingData}
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-900/20"
+                        >
+                          {savingData ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4 mr-2" />
+                              Save Resume
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </form>
+                  </TabsContent>
+
+                  <TabsContent value="preview">
+                    <div className="space-y-4">
+                      <div className="flex justify-end">
+                        <Button
+                          onClick={exportToPDF}
+                          disabled={exportingPdf}
+                          className="bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-700 hover:to-cyan-700 text-white shadow-lg"
+                        >
+                          {exportingPdf ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Exporting...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="h-4 w-4 mr-2" />
+                              Export PDF
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      <div
+                        id="resume-preview-content"
+                        className="bg-white rounded-lg p-8 text-gray-800 shadow-2xl"
+                      >
+                        <MDEditor.Markdown
+                          source={previewMarkdown}
+                          style={{ backgroundColor: "white", color: "#333" }}
+                        />
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </motion.div>
+            </CardContent>
+          </Card>
+        </SpotlightEffect>
+      </ThreeDCard>
     </div>
   );
 }

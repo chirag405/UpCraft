@@ -1,103 +1,243 @@
 // QuizResult.jsx
 "use client";
 
-import { Trophy, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CardContent, CardFooter } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
+import {
+  Award,
+  BarChart3,
+  CheckCircle,
+  Clock,
+  Medal,
+  Share2,
+  XCircle,
+  TrendingUp,
+  Download,
+} from "lucide-react";
+import PerformanceChart from "./performance-chart";
 
-export default function QuizResult({
-  result,
-  hideStartNew = false,
-  onStartNew,
-}) {
-  if (!result) return null;
+export default function QuizResult({ result }) {
+  const router = useRouter();
+
+  const getScoreCategory = (score) => {
+    if (score >= 80) return "Excellent";
+    if (score >= 60) return "Good";
+    if (score >= 40) return "Fair";
+    return "Needs Improvement";
+  };
+
+  const getScoreColor = (score) => {
+    if (score >= 80) return "from-emerald-400 to-teal-500";
+    if (score >= 60) return "from-cyan-400 to-blue-500";
+    if (score >= 40) return "from-amber-400 to-orange-500";
+    return "from-rose-400 to-red-500";
+  };
+
+  const getScoreBgColor = (score) => {
+    if (score >= 80)
+      return "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20";
+    if (score >= 60)
+      return "bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20";
+    if (score >= 40)
+      return "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20";
+    return "bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20";
+  };
+
+  const getStatColor = (stat) => {
+    switch (stat) {
+      case "correctAnswers":
+        return "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20";
+      case "wrongAnswers":
+        return "text-rose-500 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20";
+      case "duration":
+        return "text-blue-500 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20";
+      default:
+        return "text-amber-500 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20";
+    }
+  };
+
+  const wrongAnswers = result.totalQuestions - result.correctAnswers;
+  const scoreCategory = getScoreCategory(result.score);
+  const scoreColor = getScoreColor(result.score);
+  const scoreBgColor = getScoreBgColor(result.score);
+
+  const stats = [
+    {
+      name: "Correct",
+      value: `${result.correctAnswers}`,
+      icon: <CheckCircle className="h-5 w-5" />,
+      type: "correctAnswers",
+    },
+    {
+      name: "Wrong",
+      value: `${wrongAnswers}`,
+      icon: <XCircle className="h-5 w-5" />,
+      type: "wrongAnswers",
+    },
+    {
+      name: "Duration",
+      value: `${result.duration}min`,
+      icon: <Clock className="h-5 w-5" />,
+      type: "duration",
+    },
+    {
+      name: "Score",
+      value: `${result.score}%`,
+      icon: <Award className="h-5 w-5" />,
+      type: "score",
+    },
+  ];
 
   return (
-    <div className="mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Header with score */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex items-center gap-2"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="text-center space-y-4"
       >
-        <Trophy className="h-8 w-8 text-yellow-400" />
-        <h1 className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 text-3xl font-bold">
-          Quiz Results
-        </h1>
+        <div
+          className={`inline-flex items-center px-4 py-1.5 rounded-full border ${scoreBgColor}`}
+        >
+          <Medal className="h-4 w-4 mr-2" />
+          <span className="font-medium">{scoreCategory} Performance</span>
+        </div>
+
+        <h1 className="text-3xl font-bold">Your Interview Results</h1>
+
+        <p className="text-zinc-500 dark:text-zinc-400 max-w-lg mx-auto">
+          Review your performance details below and see how you can improve for
+          next time.
+        </p>
       </motion.div>
 
-      <CardContent className="space-y-6">
-        {/* Score Overview */}
-        <motion.div
-          initial={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          className="text-center space-y-2"
-        >
-          <h3 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-            {result.quizScore.toFixed(1)}%
-          </h3>
-          <Progress
-            value={result.quizScore}
-            className="w-full bg-slate-700/50 h-3"
-            indicatorclassname="bg-gradient-to-r from-blue-500 to-purple-600"
-          />
-        </motion.div>
-
-        {/* Improvement Tip */}
-        {result.improvementTip && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-slate-700/50 p-4 rounded-lg border border-slate-600/50"
-          >
-            <p className="font-medium text-slate-200">Improvement Tip:</p>
-            <p className="text-slate-400 mt-2">{result.improvementTip}</p>
-          </motion.div>
-        )}
-
-        {/* Questions Review */}
-        <div className="space-y-4">
-          <h3 className="font-medium text-slate-200">Question Review</h3>
-          {result.questions.map((q, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-4 space-y-2"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-medium text-slate-200">{q.question}</p>
-                {q.isCorrect ? (
-                  <CheckCircle2 className="h-6 w-6 text-green-400 flex-shrink-0" />
+      {/* Score card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <Card className="overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-lg rounded-xl">
+          <CardHeader className={`bg-gradient-to-r ${scoreColor} px-6 py-5`}>
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-medium text-white/80">
+                  Overall Score
+                </h2>
+                <p className="text-4xl font-bold text-white flex items-baseline">
+                  {result.score}%
+                  <span className="text-sm text-white/70 ml-2">
+                    ({result.correctAnswers} of {result.totalQuestions} correct)
+                  </span>
+                </p>
+              </div>
+              <div className="h-24 w-24 bg-white/20 rounded-full flex items-center justify-center">
+                {result.score >= 80 ? (
+                  <Award className="h-12 w-12 text-white" />
+                ) : result.score >= 60 ? (
+                  <Medal className="h-12 w-12 text-white" />
                 ) : (
-                  <XCircle className="h-6 w-6 text-red-400 flex-shrink-0" />
+                  <TrendingUp className="h-12 w-12 text-white" />
                 )}
               </div>
-              <div className="text-sm text-slate-400">
-                <p>Your answer: {q.userAnswer}</p>
-                {!q.isCorrect && <p>Correct answer: {q.answer}</p>}
-              </div>
-              <div className="text-sm bg-slate-800/50 p-3 rounded-lg mt-2">
-                <p className="font-medium text-slate-200">Explanation:</p>
-                <p className="text-slate-400 mt-1">{q.explanation}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </CardContent>
+            </div>
+          </CardHeader>
 
-      {!hideStartNew && (
-        <CardFooter>
-          <Button
-            onClick={onStartNew}
-            className="w-full bg-blue-600 hover:bg-blue-700"
-          >
-            Start New Quiz
-          </Button>
-        </CardFooter>
-      )}
+          <CardContent className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat) => (
+              <div
+                key={stat.name}
+                className={`flex items-center gap-3 p-3 rounded-lg border ${getStatColor(
+                  stat.type
+                )}`}
+              >
+                <div className="bg-white dark:bg-zinc-900 p-2 rounded-lg">
+                  {stat.icon}
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {stat.name}
+                  </p>
+                  <p className="text-lg font-bold">{stat.value}</p>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Performance trends */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+      >
+        <Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-md rounded-xl">
+          <CardHeader className="px-6 pb-2">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-xl">Performance Trend</CardTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 border-zinc-200 dark:border-zinc-800"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export Data
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="px-2">
+            <div className="h-80">
+              <PerformanceChart currentScore={result.score} />
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Action buttons */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.3 }}
+        className="flex flex-col sm:flex-row gap-4 justify-center pt-4"
+      >
+        <Button
+          onClick={() => router.push("/interview")}
+          variant="outline"
+          className="border-zinc-200 dark:border-zinc-800"
+          size="lg"
+        >
+          <BarChart3 className="mr-2 h-4 w-4" />
+          View All Results
+        </Button>
+
+        <Button
+          onClick={() => router.push("/interview/mock")}
+          className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0"
+          size="lg"
+        >
+          Try Another Interview
+        </Button>
+
+        <Button
+          variant="outline"
+          className="border-zinc-200 dark:border-zinc-800"
+          size="lg"
+        >
+          <Share2 className="mr-2 h-4 w-4" />
+          Share Results
+        </Button>
+      </motion.div>
     </div>
   );
 }

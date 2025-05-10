@@ -20,6 +20,12 @@ import { improveWithAI } from "@/actions/resume";
 import { toast } from "sonner";
 import useFetch from "@/hooks/use-fetch";
 import { motion } from "framer-motion";
+import {
+  FloatingLabelInput,
+  FloatingLabelTextarea,
+} from "@/components/aceternity/floating-input";
+import { SpotlightEffect } from "@/components/aceternity/spotlight";
+import { GradientText } from "@/components/aceternity/text-effect";
 
 const formatDisplayDate = (dateString) => {
   if (!dateString) return "";
@@ -29,14 +35,16 @@ const formatDisplayDate = (dateString) => {
 
 export function EntryForm({ type, entries, onChange }) {
   const [isAdding, setIsAdding] = useState(false);
+  const [editIndex, setEditIndex] = useState(-1);
+  const [enhancingDescription, setEnhancingDescription] = useState(false);
 
   const {
     register,
-    handleSubmit: handleValidation,
-    formState: { errors },
+    handleSubmit,
     reset,
     watch,
     setValue,
+    formState: { errors },
   } = useForm({
     resolver: zodResolver(entrySchema),
     defaultValues: {
@@ -44,99 +52,125 @@ export function EntryForm({ type, entries, onChange }) {
       organization: "",
       startDate: "",
       endDate: "",
-      description: "",
       current: false,
+      description: "",
     },
   });
 
-  const current = watch("current");
+  const watchCurrent = watch("current");
+  const watchDescription = watch("description");
 
-  const handleAdd = handleValidation((data) => {
-    const formattedEntry = {
-      ...data,
-      startDate: formatDisplayDate(data.startDate),
-      endDate: data.current ? "" : formatDisplayDate(data.endDate),
-    };
+  const { loading: improvingDescription, fn: improveDescription } =
+    useFetch(improveWithAI);
 
-    onChange([...entries, formattedEntry]);
+  useEffect(() => {
+    if (watchCurrent) {
+      setValue("endDate", "");
+    }
+  }, [watchCurrent, setValue]);
 
-    reset();
+  const onSubmit = (data) => {
+    const newEntries = [...entries];
+    if (editIndex >= 0) {
+      newEntries[editIndex] = data;
+    } else {
+      newEntries.push(data);
+    }
+    onChange(newEntries);
     setIsAdding(false);
-  });
+    setEditIndex(-1);
+    reset();
+  };
 
-  const handleDelete = (index) => {
-    const newEntries = entries.filter((_, i) => i !== index);
+  const removeEntry = (index) => {
+    const newEntries = [...entries];
+    newEntries.splice(index, 1);
     onChange(newEntries);
   };
 
-  const {
-    loading: isImproving,
-    fn: improveWithAIFn,
-    data: improvedContent,
-    error: improveError,
-  } = useFetch(improveWithAI);
+  const editEntry = (index) => {
+    setEditIndex(index);
+    const entry = entries[index];
+    Object.entries(entry).forEach(([key, value]) => {
+      setValue(key, value);
+    });
+    setIsAdding(true);
+  };
 
-  // Add this effect to handle the improvement result
-  useEffect(() => {
-    if (improvedContent && !isImproving) {
-      setValue("description", improvedContent);
-      toast.success("Description improved successfully!");
-    }
-    if (improveError) {
-      toast.error(improveError.message || "Failed to improve description");
-    }
-  }, [improvedContent, improveError, isImproving, setValue]);
-
-  // Replace handleImproveDescription with this
-  const handleImproveDescription = async () => {
-    const description = watch("description");
-    if (!description) {
+  const handleEnhance = async () => {
+    if (!watchDescription.trim()) {
       toast.error("Please enter a description first");
       return;
     }
 
-    await improveWithAIFn({
-      current: description,
-      type: type.toLowerCase(), // 'experience', 'education', or 'project'
-    });
+    setEnhancingDescription(true);
+    try {
+      const enhancedDescription = await improveDescription(watchDescription);
+      if (enhancedDescription) {
+        setValue("description", enhancedDescription);
+        toast.success("Description enhanced successfully!");
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to enhance description");
+    } finally {
+      setEnhancingDescription(false);
+    }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="grid gap-4">
         {entries.map((item, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
           >
-            <Card className="bg-slate-800/50 border border-slate-700/50 hover:border-blue-500/50 transition-all">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-                  {item.title} @ {item.organization}
-                </CardTitle>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  type="button"
-                  onClick={() => handleDelete(index)}
-                  className="border-slate-600/50 text-slate-300 hover:bg-slate-700/30 hover:text-red-400"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-slate-400">
-                  {item.current
-                    ? `${item.startDate} - Present`
-                    : `${item.startDate} - ${item.endDate}`}
-                </p>
-                <p className="mt-2 text-sm text-slate-300 whitespace-pre-wrap">
-                  {item.description}
-                </p>
-              </CardContent>
-            </Card>
+            <SpotlightEffect>
+              <Card className="bg-slate-900/50 border-slate-800/50 hover:border-blue-500/30 transition-all duration-300 shadow-lg">
+                <CardHeader className="flex flex-row items-start justify-between pb-3">
+                  <div className="space-y-1">
+                    <CardTitle className="text-xl text-slate-200">
+                      {item.title}
+                    </CardTitle>
+                    <div className="text-slate-400">{item.organization}</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => editEntry(index)}
+                      className="h-8 w-8 p-0 bg-slate-800/50 hover:bg-blue-500/20 hover:text-blue-400 text-slate-300"
+                    >
+                      <span className="sr-only">Edit</span>
+                      <Sparkles className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeEntry(index)}
+                      className="h-8 w-8 p-0 bg-slate-800/50 hover:bg-red-500/20 hover:text-red-400 text-slate-300"
+                    >
+                      <span className="sr-only">Remove</span>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-slate-400">
+                    {item.current
+                      ? `${formatDisplayDate(item.startDate)} - Present`
+                      : `${formatDisplayDate(
+                          item.startDate
+                        )} - ${formatDisplayDate(item.endDate)}`}
+                  </p>
+                  <div className="mt-2 text-sm text-slate-300 whitespace-pre-wrap bg-slate-800/30 p-3 rounded-md border border-slate-700/30">
+                    {item.description}
+                  </div>
+                </CardContent>
+              </Card>
+            </SpotlightEffect>
           </motion.div>
         ))}
       </div>
@@ -146,146 +180,169 @@ export function EntryForm({ type, entries, onChange }) {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
         >
-          <Card className="bg-slate-800/50 border border-slate-700/50 hover:border-blue-500/50 transition-all">
-            <CardHeader>
-              <CardTitle className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-                Add {type}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Input
-                    placeholder="Title/Position"
-                    className="bg-slate-700/30 border-slate-600/50 text-slate-200 focus:ring-blue-500"
-                    {...register("title")}
-                    error={errors.title}
-                  />
-                  {errors.title && (
-                    <p className="text-sm text-red-400">
-                      {errors.title.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Input
-                    placeholder="Organization/Company"
-                    className="bg-slate-700/30 border-slate-600/50 text-slate-200 focus:ring-blue-500"
-                    {...register("organization")}
-                    error={errors.organization}
-                  />
-                  {errors.organization && (
-                    <p className="text-sm text-red-400">
-                      {errors.organization.message}
-                    </p>
-                  )}
-                </div>
-              </div>
+          <SpotlightEffect>
+            <Card className="bg-slate-900/50 border-slate-800/50 shadow-lg">
+              <form onSubmit={handleSubmit(onSubmit)}>
+                <CardHeader>
+                  <CardTitle>
+                    <GradientText from="from-blue-400" to="to-purple-500">
+                      {editIndex >= 0 ? `Edit ${type}` : `Add ${type}`}
+                    </GradientText>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <FloatingLabelInput
+                        id="title"
+                        label="Title/Position"
+                        error={!!errors.title}
+                        {...register("title")}
+                        required
+                      />
+                      {errors.title && (
+                        <p className="text-sm text-red-500">
+                          {errors.title.message}
+                        </p>
+                      )}
+                    </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Input
-                    type="month"
-                    className="bg-slate-700/30 border-slate-600/50 text-slate-200"
-                    {...register("startDate")}
-                    error={errors.startDate}
-                  />
-                  {errors.startDate && (
-                    <p className="text-sm text-red-400">
-                      {errors.startDate.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Input
-                    type="month"
-                    className="bg-slate-700/30 border-slate-600/50 text-slate-200 disabled:opacity-50"
-                    {...register("endDate")}
-                    disabled={current}
-                    error={errors.endDate}
-                  />
-                  {errors.endDate && (
-                    <p className="text-sm text-red-400">
-                      {errors.endDate.message}
-                    </p>
-                  )}
-                </div>
-              </div>
+                    <div className="space-y-1">
+                      <FloatingLabelInput
+                        id="organization"
+                        label="Organization/Company"
+                        error={!!errors.organization}
+                        {...register("organization")}
+                        required
+                      />
+                      {errors.organization && (
+                        <p className="text-sm text-red-500">
+                          {errors.organization.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
 
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="current"
-                  className="h-4 w-4 rounded border-slate-600/50 bg-slate-700/30 text-blue-500 focus:ring-blue-500"
-                  {...register("current")}
-                  onChange={(e) => {
-                    setValue("current", e.target.checked);
-                    if (e.target.checked) {
-                      setValue("endDate", "");
-                    }
-                  }}
-                />
-                <label htmlFor="current" className="text-slate-300">
-                  Current {type}
-                </label>
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <FloatingLabelInput
+                        type="month"
+                        id="startDate"
+                        label="Start Date"
+                        error={!!errors.startDate}
+                        {...register("startDate")}
+                        required
+                        className="pt-6 pb-2"
+                      />
+                      {errors.startDate && (
+                        <p className="text-sm text-red-500">
+                          {errors.startDate.message}
+                        </p>
+                      )}
+                    </div>
 
-              <div className="space-y-2">
-                <Textarea
-                  placeholder={`Description of your ${type.toLowerCase()}`}
-                  className="h-32 bg-slate-700/30 border-slate-600/50 text-slate-200 focus:ring-blue-500"
-                  {...register("description")}
-                  error={errors.description}
-                />
-                {errors.description && (
-                  <p className="text-sm text-red-400">
-                    {errors.description.message}
-                  </p>
-                )}
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleImproveDescription}
-                disabled={isImproving || !watch("description")}
-                className="text-blue-400 hover:bg-slate-700/30"
-              >
-                {isImproving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-400" />
-                    Improving...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2 text-blue-400" />
-                    Improve with AI
-                  </>
-                )}
-              </Button>
-            </CardContent>
-            <CardFooter className="flex justify-end space-x-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  reset();
-                  setIsAdding(false);
-                }}
-                className="border-slate-600/50 text-slate-300 hover:bg-slate-700/30"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={handleAdd}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Add Entry
-              </Button>
-            </CardFooter>
-          </Card>
+                    <div className="space-y-1">
+                      <div className="relative">
+                        <FloatingLabelInput
+                          type="month"
+                          id="endDate"
+                          label="End Date"
+                          disabled={watchCurrent}
+                          error={!!errors.endDate && !watchCurrent}
+                          {...register("endDate")}
+                          required={!watchCurrent}
+                          className={watchCurrent ? "opacity-50" : ""}
+                        />
+                        {errors.endDate && !watchCurrent && (
+                          <p className="text-sm text-red-500">
+                            {errors.endDate.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center mt-2">
+                        <input
+                          type="checkbox"
+                          id="current"
+                          {...register("current")}
+                          className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-blue-600 focus:ring-blue-500"
+                        />
+                        <label
+                          htmlFor="current"
+                          className="ml-2 text-sm text-slate-300"
+                        >
+                          Currently working here
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <FloatingLabelTextarea
+                        id="description"
+                        label="Description"
+                        error={!!errors.description}
+                        {...register("description")}
+                        required
+                        className="min-h-32"
+                      />
+                      {errors.description && (
+                        <p className="text-sm text-red-500">
+                          {errors.description.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end mt-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleEnhance}
+                        disabled={
+                          enhancingDescription || !watchDescription.trim()
+                        }
+                        className="flex items-center gap-1.5 bg-slate-800 border-slate-700 text-slate-300 hover:bg-blue-900/20 hover:text-blue-400 hover:border-blue-500/40"
+                      >
+                        {enhancingDescription ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Enhancing...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4" />
+                            <span>Enhance with AI</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsAdding(false);
+                      setEditIndex(-1);
+                      reset();
+                    }}
+                    className="border-slate-700 text-slate-300 hover:bg-slate-800/50 hover:text-slate-100"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-900/20"
+                  >
+                    {editIndex >= 0 ? "Save Changes" : `Add ${type}`}
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+          </SpotlightEffect>
         </motion.div>
       )}
 
@@ -295,7 +352,7 @@ export function EntryForm({ type, entries, onChange }) {
           animate={{ opacity: 1, y: 0 }}
         >
           <Button
-            className="w-full border-slate-600/50 text-slate-300 hover:bg-slate-700/30 hover:text-blue-400"
+            className="w-full bg-slate-800/80 border border-slate-700/50 text-slate-300 hover:bg-blue-900/20 hover:text-blue-400 hover:border-blue-500/30 transition-all"
             variant="outline"
             onClick={() => setIsAdding(true)}
           >

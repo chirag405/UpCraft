@@ -1,72 +1,88 @@
 // StatsCards.jsx
 "use client";
-import { Brain, Target, Trophy } from "lucide-react";
+import { Brain, Target, Trophy, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 
 export default function StatsCards({ assessments }) {
-  const getAverageScore = () => {
-    if (!assessments?.length) return 0;
-    const total = assessments.reduce(
-      (sum, assessment) => sum + assessment.quizScore,
-      0
-    );
-    return (total / assessments.length).toFixed(1);
-  };
+  // Skip if no assessments
+  if (!assessments?.length) {
+    return null;
+  }
 
-  const getLatestAssessment = () => {
-    if (!assessments?.length) return null;
-    return assessments[0];
-  };
+  // Calculate stats
+  const totalTests = assessments.length;
 
-  const getTotalQuestions = () => {
-    if (!assessments?.length) return 0;
-    return assessments.reduce(
-      (sum, assessment) => sum + assessment.questions.length,
-      0
-    );
-  };
+  const averageScore =
+    assessments.reduce((sum, test) => sum + test.score, 0) / totalTests;
+
+  const highestScore = Math.max(...assessments.map((test) => test.score));
+
+  const improvingTrend = assessments
+    .slice()
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    .slice(-3)
+    .every((test, index, arr) => {
+      if (index === 0) return true;
+      return test.score >= arr[index - 1].score;
+    });
+
+  const stats = [
+    {
+      title: "Total Interviews",
+      value: totalTests,
+      description: "Mock interviews completed",
+      icon: <Brain className="h-5 w-5 text-white" />,
+      gradient: "from-violet-500 to-fuchsia-500",
+    },
+    {
+      title: "Average Score",
+      value: `${Math.round(averageScore)}%`,
+      description: "Average performance",
+      icon: <Target className="h-5 w-5 text-white" />,
+      gradient: "from-cyan-400 to-blue-500",
+    },
+    {
+      title: "Top Score",
+      value: `${highestScore}%`,
+      description: "Your best performance",
+      icon: <Trophy className="h-5 w-5 text-white" />,
+      gradient: "from-amber-400 to-orange-500",
+    },
+    {
+      title: "Trend",
+      value: improvingTrend ? "Improving" : "Steady",
+      description: "Based on recent tests",
+      icon: <TrendingUp className="h-5 w-5 text-white" />,
+      gradient: "from-emerald-400 to-teal-500",
+    },
+  ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      {[
-        {
-          title: "Average Score",
-          value: `${getAverageScore()}%`,
-          icon: <Trophy className="h-5 w-5 text-blue-400" />,
-          description: "Across all assessments",
-        },
-        {
-          title: "Questions Practiced",
-          value: getTotalQuestions(),
-          icon: <Brain className="h-5 w-5 text-purple-400" />,
-          description: "Total questions",
-        },
-        {
-          title: "Latest Score",
-          value: `${getLatestAssessment()?.quizScore.toFixed(1) || 0}%`,
-          icon: <Target className="h-5 w-5 text-green-400" />,
-          description: "Most recent quiz",
-        },
-      ].map((stat, index) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {stats.map((stat, index) => (
         <motion.div
           key={stat.title}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.1 }}
+          transition={{ duration: 0.4, delay: index * 0.1 }}
         >
-          <Card className="bg-slate-800/50 border border-slate-700/50 hover:border-blue-500/50 transition-all">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-300">
-                {stat.title}
-              </CardTitle>
-              <div className="bg-blue-500/10 p-2 rounded-lg">{stat.icon}</div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-                {stat.value}
+          <Card className="overflow-hidden border-0 rounded-xl shadow-lg bg-white dark:bg-zinc-900">
+            <div className={`bg-gradient-to-r ${stat.gradient} p-4`}>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-white">
+                  {stat.title}
+                </CardTitle>
+                <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                  {stat.icon}
+                </div>
               </div>
-              <p className="text-xs text-slate-400 mt-1">{stat.description}</p>
+            </div>
+            <CardContent className="pt-4">
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                {stat.description}
+              </p>
             </CardContent>
           </Card>
         </motion.div>
