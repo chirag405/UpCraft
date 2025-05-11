@@ -1,7 +1,7 @@
 "use client";
 
 import { SignUp } from "@clerk/nextjs";
-import { motion } from "framer-motion";
+import { motion } from "@/lib/motion-wrapper";
 import { Rocket, Sparkles } from "lucide-react";
 import { useEffect } from "react";
 

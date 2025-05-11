@@ -71,21 +71,36 @@ export async function getUserOnboardingStatus() {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
-  const user = await db.user.findUnique({
-    where: { clerkUserId: userId },
-  });
-
-  if (!user) throw new Error("User not found");
-
   try {
-    const user = await db.user.findUnique({
-      where: {
-        clerkUserId: userId,
-      },
-      select: {
-        industry: true,
-      },
+    // Check if user exists in database
+    let user = await db.user.findUnique({
+      where: { clerkUserId: userId },
     });
+
+    // If user doesn't exist, create a new user record
+    if (!user) {
+      // Get user details from Clerk
+      const clerkUser = await fetch(
+        `https://api.clerk.com/v1/users/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+          },
+        }
+      ).then((res) => res.json());
+
+      // Create new user in database
+      user = await db.user.create({
+        data: {
+          clerkUserId: userId,
+          email: clerkUser.email_addresses[0]?.email_address,
+          name: `${clerkUser.first_name || ""} ${
+            clerkUser.last_name || ""
+          }`.trim(),
+          // Leave industry as null to indicate not onboarded
+        },
+      });
+    }
 
     return {
       isOnboarded: !!user?.industry,

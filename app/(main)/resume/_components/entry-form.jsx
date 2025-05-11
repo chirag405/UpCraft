@@ -19,7 +19,7 @@ import { Sparkles, PlusCircle, X, Loader2 } from "lucide-react";
 import { improveWithAI } from "@/actions/resume";
 import { toast } from "sonner";
 import useFetch from "@/hooks/use-fetch";
-import { motion } from "framer-motion";
+import { motion } from "@/lib/motion-wrapper";
 import {
   FloatingLabelInput,
   FloatingLabelTextarea,
@@ -128,20 +128,20 @@ export function EntryForm({ type, entries, onChange }) {
             transition={{ duration: 0.3, delay: index * 0.05 }}
           >
             <SpotlightEffect>
-              <Card className="bg-slate-900/50 border-slate-800/50 hover:border-blue-500/30 transition-all duration-300 shadow-lg">
+              <Card className="bg-white border border-sky-100 shadow-sm hover:shadow-md transition-all rounded-xl">
                 <CardHeader className="flex flex-row items-start justify-between pb-3">
                   <div className="space-y-1">
-                    <CardTitle className="text-xl text-slate-200">
+                    <CardTitle className="text-xl text-sky-950">
                       {item.title}
                     </CardTitle>
-                    <div className="text-slate-400">{item.organization}</div>
+                    <div className="text-sky-700">{item.organization}</div>
                   </div>
                   <div className="flex gap-2">
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => editEntry(index)}
-                      className="h-8 w-8 p-0 bg-slate-800/50 hover:bg-blue-500/20 hover:text-blue-400 text-slate-300"
+                      className="h-8 w-8 p-0 bg-sky-50 hover:bg-sky-100 hover:text-sky-600 text-sky-500 rounded-full"
                     >
                       <span className="sr-only">Edit</span>
                       <Sparkles className="h-4 w-4" />
@@ -150,7 +150,7 @@ export function EntryForm({ type, entries, onChange }) {
                       size="sm"
                       variant="ghost"
                       onClick={() => removeEntry(index)}
-                      className="h-8 w-8 p-0 bg-slate-800/50 hover:bg-red-500/20 hover:text-red-400 text-slate-300"
+                      className="h-8 w-8 p-0 bg-sky-50 hover:bg-red-50 hover:text-red-500 text-sky-500 rounded-full"
                     >
                       <span className="sr-only">Remove</span>
                       <X className="h-4 w-4" />
@@ -158,14 +158,14 @@ export function EntryForm({ type, entries, onChange }) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-sky-600 font-medium">
                     {item.current
                       ? `${formatDisplayDate(item.startDate)} - Present`
                       : `${formatDisplayDate(
                           item.startDate
                         )} - ${formatDisplayDate(item.endDate)}`}
                   </p>
-                  <div className="mt-2 text-sm text-slate-300 whitespace-pre-wrap bg-slate-800/30 p-3 rounded-md border border-slate-700/30">
+                  <div className="mt-2 text-sm text-sky-800 whitespace-pre-wrap bg-sky-50 p-4 rounded-lg border border-sky-100">
                     {item.description}
                   </div>
                 </CardContent>
@@ -181,11 +181,11 @@ export function EntryForm({ type, entries, onChange }) {
           animate={{ opacity: 1, scale: 1 }}
         >
           <SpotlightEffect>
-            <Card className="bg-slate-900/50 border-slate-800/50 shadow-lg">
+            <Card className="bg-white border border-sky-100 shadow-md rounded-xl">
               <form onSubmit={handleSubmit(onSubmit)}>
                 <CardHeader>
                   <CardTitle>
-                    <GradientText from="from-blue-400" to="to-purple-500">
+                    <GradientText from="from-sky-500" to="to-blue-600">
                       {editIndex >= 0 ? `Edit ${type}` : `Add ${type}`}
                     </GradientText>
                   </CardTitle>
@@ -199,6 +199,7 @@ export function EntryForm({ type, entries, onChange }) {
                         error={!!errors.title}
                         {...register("title")}
                         required
+                        className="border-sky-200 focus:border-sky-500"
                       />
                       {errors.title && (
                         <p className="text-sm text-red-500">
@@ -214,6 +215,7 @@ export function EntryForm({ type, entries, onChange }) {
                         error={!!errors.organization}
                         {...register("organization")}
                         required
+                        className="border-sky-200 focus:border-sky-500"
                       />
                       {errors.organization && (
                         <p className="text-sm text-red-500">
@@ -232,7 +234,7 @@ export function EntryForm({ type, entries, onChange }) {
                         error={!!errors.startDate}
                         {...register("startDate")}
                         required
-                        className="pt-6 pb-2"
+                        className="pt-6 pb-2 border-sky-200 focus:border-sky-500"
                       />
                       {errors.startDate && (
                         <p className="text-sm text-red-500">
@@ -251,7 +253,9 @@ export function EntryForm({ type, entries, onChange }) {
                           error={!!errors.endDate && !watchCurrent}
                           {...register("endDate")}
                           required={!watchCurrent}
-                          className={watchCurrent ? "opacity-50" : ""}
+                          className={`border-sky-200 focus:border-sky-500 ${
+                            watchCurrent ? "opacity-50" : ""
+                          }`}
                         />
                         {errors.endDate && !watchCurrent && (
                           <p className="text-sm text-red-500">
@@ -265,11 +269,11 @@ export function EntryForm({ type, entries, onChange }) {
                           type="checkbox"
                           id="current"
                           {...register("current")}
-                          className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-blue-600 focus:ring-blue-500"
+                          className="h-4 w-4 rounded border-sky-300 bg-white text-sky-600 focus:ring-sky-500"
                         />
                         <label
                           htmlFor="current"
-                          className="ml-2 text-sm text-slate-300"
+                          className="ml-2 text-sm text-sky-700"
                         >
                           Currently working here
                         </label>
@@ -285,7 +289,7 @@ export function EntryForm({ type, entries, onChange }) {
                         error={!!errors.description}
                         {...register("description")}
                         required
-                        className="min-h-32"
+                        className="min-h-32 border-sky-200 focus:border-sky-500"
                       />
                       {errors.description && (
                         <p className="text-sm text-red-500">
@@ -303,7 +307,7 @@ export function EntryForm({ type, entries, onChange }) {
                         disabled={
                           enhancingDescription || !watchDescription.trim()
                         }
-                        className="flex items-center gap-1.5 bg-slate-800 border-slate-700 text-slate-300 hover:bg-blue-900/20 hover:text-blue-400 hover:border-blue-500/40"
+                        className="flex items-center gap-1.5 bg-sky-50 border-sky-200 text-sky-600 hover:bg-sky-100 hover:text-sky-700 hover:border-sky-300"
                       >
                         {enhancingDescription ? (
                           <>
@@ -329,13 +333,13 @@ export function EntryForm({ type, entries, onChange }) {
                       setEditIndex(-1);
                       reset();
                     }}
-                    className="border-slate-700 text-slate-300 hover:bg-slate-800/50 hover:text-slate-100"
+                    className="border-sky-200 text-sky-700 hover:bg-sky-50 hover:text-sky-800"
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-900/20"
+                    className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white shadow-sm"
                   >
                     {editIndex >= 0 ? "Save Changes" : `Add ${type}`}
                   </Button>
@@ -352,7 +356,7 @@ export function EntryForm({ type, entries, onChange }) {
           animate={{ opacity: 1, y: 0 }}
         >
           <Button
-            className="w-full bg-slate-800/80 border border-slate-700/50 text-slate-300 hover:bg-blue-900/20 hover:text-blue-400 hover:border-blue-500/30 transition-all"
+            className="w-full bg-white border border-sky-200 text-sky-600 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 transition-all rounded-lg"
             variant="outline"
             onClick={() => setIsAdding(true)}
           >

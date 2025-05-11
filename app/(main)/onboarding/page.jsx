@@ -12,8 +12,10 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <main>
-      <OnboardingForm industries={industries} />
+    <main className="bg-gradient-to-br from-blue-50 to-white min-h-screen">
+      <div className="container mx-auto py-8">
+        <OnboardingForm industries={industries} />
+      </div>
     </main>
   );
 }

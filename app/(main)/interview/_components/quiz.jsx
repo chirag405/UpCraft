@@ -1,9 +1,8 @@
-// Quiz.jsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { saveAssessment } from "@/actions/interview";
+import { saveQuizResult } from "@/actions/interview";
 import {
   Card,
   CardContent,
@@ -19,14 +18,14 @@ import {
   Loader2,
   CheckCircle,
   XCircle,
-  BrainCircuit,
+  Brain,
   Clock,
   ArrowRight,
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import QuizResult from "./quiz-result";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "@/lib/motion-wrapper";
 
 export default function Quiz() {
   const [questions, setQuestions] = useState([]);
@@ -39,6 +38,7 @@ export default function Quiz() {
   const [isSaving, setIsSaving] = useState(false);
   const [result, setResult] = useState(null);
   const [quizId, setQuizId] = useState(null);
+  const [userAnswers, setUserAnswers] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -58,12 +58,16 @@ export default function Quiz() {
         ],
         correctAnswer:
           "To optimize performance by minimizing direct DOM manipulations",
+        explanation:
+          "React uses a virtual DOM to optimize performance by minimizing costly direct DOM manipulations. It creates a lightweight copy of the DOM, makes changes to this copy, then efficiently updates only the necessary parts of the actual DOM.",
       },
       {
         id: 2,
         question: "Which of the following is NOT a JavaScript data type?",
         options: ["String", "Boolean", "Float", "Object"],
         correctAnswer: "Float",
+        explanation:
+          "JavaScript does not have a specific 'Float' data type. It uses a single 'Number' type for all numeric values, including integers and floating-point numbers.",
       },
       {
         id: 3,
@@ -75,6 +79,8 @@ export default function Quiz() {
           "Colorful Style Sheets",
         ],
         correctAnswer: "Cascading Style Sheets",
+        explanation:
+          "CSS stands for Cascading Style Sheets, which is a style sheet language used for describing the presentation of a document written in HTML or XML.",
       },
       {
         id: 4,
@@ -82,6 +88,8 @@ export default function Quiz() {
           "In SQL, which statement is used to retrieve data from a database?",
         options: ["GET", "OPEN", "EXTRACT", "SELECT"],
         correctAnswer: "SELECT",
+        explanation:
+          "The SELECT statement is used in SQL to retrieve data from a database. It's one of the most fundamental commands in SQL.",
       },
       {
         id: 5,
@@ -89,10 +97,13 @@ export default function Quiz() {
           "What is the time complexity of searching in a balanced binary search tree?",
         options: ["O(n)", "O(n²)", "O(log n)", "O(1)"],
         correctAnswer: "O(log n)",
+        explanation:
+          "The time complexity of searching in a balanced binary search tree is O(log n), where n is the number of nodes. This is because with each comparison, we eliminate half of the remaining tree.",
       },
     ];
 
     setQuestions(sampleQuestions);
+    setUserAnswers(new Array(sampleQuestions.length).fill(""));
     setIsLoading(false);
   }, []);
 
@@ -115,6 +126,11 @@ export default function Quiz() {
   };
 
   const handleNextQuestion = async () => {
+    // Save current answer
+    const newAnswers = [...userAnswers];
+    newAnswers[currentQuestion] = selectedAnswer || "";
+    setUserAnswers(newAnswers);
+
     // Check if answer is correct and update score
     if (selectedAnswer === questions[currentQuestion].correctAnswer) {
       setScore(score + 1);
@@ -145,8 +161,8 @@ export default function Quiz() {
       setIsSaving(true);
 
       try {
-        // Save assessment to database
-        await saveAssessment(resultData);
+        // Save assessment to database using the correct function
+        await saveQuizResult(questions, newAnswers, finalScore);
         setShowResult(true);
         toast.success("Assessment saved successfully!");
       } catch (error) {
@@ -161,8 +177,8 @@ export default function Quiz() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <Loader2 className="h-10 w-10 text-indigo-500 animate-spin mb-4" />
-        <p className="text-zinc-600 dark:text-zinc-400">Loading questions...</p>
+        <Loader2 className="h-10 w-10 text-sky-500 animate-spin mb-4" />
+        <p className="text-slate-600">Loading questions...</p>
       </div>
     );
   }
@@ -175,131 +191,129 @@ export default function Quiz() {
   const timeLeftPercent = (timeLeft / 30) * 100;
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-lg rounded-xl overflow-hidden">
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <BrainCircuit className="h-5 w-5 text-white" />
-              <h2 className="text-lg font-medium text-white">
-                Tech Interview Practice
-              </h2>
-            </div>
-            <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
-              <Clock className="h-3.5 w-3.5 text-white" />
-              <span className="text-sm text-white font-medium">
-                Question {currentQuestion + 1}/{questions.length}
-              </span>
-            </div>
+    <div>
+      <div className="bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-4 rounded-t-2xl">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-white" />
+            <h2 className="text-lg font-medium text-white">
+              Technical Interview Questions
+            </h2>
           </div>
-
-          <div className="mt-3">
-            <div className="flex justify-between text-xs text-white/70 mb-1.5">
-              <span>Progress</span>
-              <span>{Math.round(progressPercent)}%</span>
-            </div>
-            <Progress
-              value={progressPercent}
-              className="h-1.5 bg-white/30"
-              indicatorClassName="bg-white"
-            />
+          <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
+            <Clock className="h-3.5 w-3.5 text-white" />
+            <span className="text-sm text-white font-medium">
+              Question {currentQuestion + 1}/{questions.length}
+            </span>
           </div>
         </div>
 
-        <CardContent className="pt-6 pb-4 px-6">
-          <motion.div
-            key={currentQuestion}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-xl font-semibold mb-2">
-                  {questions[currentQuestion].question}
-                </h3>
+        <div className="mt-4">
+          <div className="flex justify-between text-xs text-white/90 mb-1.5">
+            <span>Progress</span>
+            <span>{Math.round(progressPercent)}%</span>
+          </div>
+          <Progress
+            value={progressPercent}
+            className="h-1.5 bg-white/30"
+            indicatorClassName="bg-white"
+          />
+        </div>
+      </div>
 
-                <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400 mb-1.5">
-                  <span>Time remaining</span>
-                  <span>{timeLeft} seconds</span>
-                </div>
-                <div className="relative h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                  <div
-                    className={`absolute top-0 left-0 h-full transition-all duration-1000 ${
-                      timeLeft < 10
-                        ? "bg-red-500"
-                        : timeLeft < 20
-                        ? "bg-amber-500"
-                        : "bg-emerald-500"
-                    }`}
-                    style={{ width: `${timeLeftPercent}%` }}
-                  />
-                </div>
+      <CardContent className="pt-6 pb-4 px-6">
+        <motion.div
+          key={currentQuestion}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xl font-semibold mb-4 text-slate-800">
+                {questions[currentQuestion].question}
+              </h3>
 
-                {timeLeft <= 5 && (
-                  <div className="flex items-center gap-1.5 mt-2 text-red-500 text-sm">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span>Hurry up!</span>
-                  </div>
-                )}
+              <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+                <span>Time remaining</span>
+                <span>{timeLeft} seconds</span>
+              </div>
+              <div className="relative h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className={`absolute top-0 left-0 h-full transition-all duration-1000 ${
+                    timeLeft < 10
+                      ? "bg-red-500"
+                      : timeLeft < 20
+                      ? "bg-amber-500"
+                      : "bg-emerald-500"
+                  }`}
+                  style={{ width: `${timeLeftPercent}%` }}
+                />
               </div>
 
-              <RadioGroup
-                value={selectedAnswer}
-                onValueChange={handleAnswerSelect}
-                className="space-y-3"
-              >
-                {questions[currentQuestion].options.map((option, index) => (
-                  <div
-                    key={index}
-                    className={`flex items-center space-x-2 rounded-lg border p-4 transition-all ${
-                      selectedAnswer === option
-                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 dark:border-indigo-500/40"
-                        : "border-zinc-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-indigo-700/50"
-                    }`}
-                  >
-                    <RadioGroupItem
-                      value={option}
-                      id={`option-${index}`}
-                      className="text-indigo-600 dark:text-indigo-400"
-                    />
-                    <Label
-                      htmlFor={`option-${index}`}
-                      className="w-full cursor-pointer text-base font-medium"
-                    >
-                      {option}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
+              {timeLeft <= 5 && (
+                <div className="flex items-center gap-1.5 mt-2 text-red-500 text-sm">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Hurry up!</span>
+                </div>
+              )}
             </div>
-          </motion.div>
-        </CardContent>
 
-        <CardFooter className="flex justify-between px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-          <div className="text-sm text-zinc-500 dark:text-zinc-400">
-            <span className="font-medium">{currentQuestion + 1}</span> of{" "}
-            <span className="font-medium">{questions.length}</span> questions
+            <RadioGroup
+              value={selectedAnswer}
+              onValueChange={handleAnswerSelect}
+              className="space-y-3"
+            >
+              {questions[currentQuestion].options.map((option, index) => (
+                <div
+                  key={index}
+                  className={`flex items-center space-x-2 rounded-xl border p-4 transition-all ${
+                    selectedAnswer === option
+                      ? "border-sky-500 bg-sky-50"
+                      : "border-slate-200 hover:border-sky-300"
+                  }`}
+                >
+                  <RadioGroupItem
+                    value={option}
+                    id={`option-${index}`}
+                    className="text-sky-600"
+                  />
+                  <Label
+                    htmlFor={`option-${index}`}
+                    className="w-full cursor-pointer text-base font-medium text-slate-700"
+                  >
+                    {option}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
           </div>
-          <Button
-            onClick={handleNextQuestion}
-            disabled={!selectedAnswer && timeLeft > 0}
-            className={`bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0 ${
-              !selectedAnswer && timeLeft > 0
-                ? "opacity-50 cursor-not-allowed"
-                : ""
-            }`}
-          >
-            {currentQuestion < questions.length - 1 ? (
-              <>
-                Next Question <ArrowRight className="ml-1 h-4 w-4" />
-              </>
-            ) : (
-              "Finish Quiz"
-            )}
-          </Button>
-        </CardFooter>
-      </Card>
+        </motion.div>
+      </CardContent>
+
+      <CardFooter className="flex justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
+        <div className="text-sm text-slate-500">
+          <span className="font-medium">{currentQuestion + 1}</span> of{" "}
+          <span className="font-medium">{questions.length}</span> questions
+        </div>
+        <Button
+          onClick={handleNextQuestion}
+          disabled={!selectedAnswer && timeLeft > 0}
+          className={`bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white border-0 ${
+            !selectedAnswer && timeLeft > 0
+              ? "opacity-50 cursor-not-allowed"
+              : ""
+          }`}
+        >
+          {currentQuestion < questions.length - 1 ? (
+            <>
+              Next Question <ArrowRight className="ml-1 h-4 w-4" />
+            </>
+          ) : (
+            "Finish Quiz"
+          )}
+        </Button>
+      </CardFooter>
     </div>
   );
 }

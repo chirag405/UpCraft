@@ -1,5 +1,5 @@
-// StatsCards.jsx
 "use client";
+
 import { Brain, Target, Trophy, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -32,34 +32,38 @@ export default function StatsCards({ assessments }) {
       title: "Total Interviews",
       value: totalTests,
       description: "Mock interviews completed",
-      icon: <Brain className="h-5 w-5 text-white" />,
-      gradient: "from-violet-500 to-fuchsia-500",
+      icon: <Brain className="h-6 w-6 text-sky-50" />,
+      gradient: "from-sky-400 to-blue-500",
+      iconBg: "bg-blue-500",
     },
     {
       title: "Average Score",
       value: `${Math.round(averageScore)}%`,
       description: "Average performance",
-      icon: <Target className="h-5 w-5 text-white" />,
-      gradient: "from-cyan-400 to-blue-500",
+      icon: <Target className="h-6 w-6 text-sky-50" />,
+      gradient: "from-sky-400 to-blue-600",
+      iconBg: "bg-blue-600",
     },
     {
       title: "Top Score",
       value: `${highestScore}%`,
       description: "Your best performance",
-      icon: <Trophy className="h-5 w-5 text-white" />,
-      gradient: "from-amber-400 to-orange-500",
+      icon: <Trophy className="h-6 w-6 text-sky-50" />,
+      gradient: "from-blue-400 to-indigo-500",
+      iconBg: "bg-indigo-500",
     },
     {
       title: "Trend",
       value: improvingTrend ? "Improving" : "Steady",
       description: "Based on recent tests",
-      icon: <TrendingUp className="h-5 w-5 text-white" />,
-      gradient: "from-emerald-400 to-teal-500",
+      icon: <TrendingUp className="h-6 w-6 text-sky-50" />,
+      gradient: "from-blue-500 to-indigo-600",
+      iconBg: "bg-indigo-600",
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {stats.map((stat, index) => (
         <motion.div
           key={stat.title}
@@ -67,22 +71,29 @@ export default function StatsCards({ assessments }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: index * 0.1 }}
         >
-          <Card className="overflow-hidden border-0 rounded-xl shadow-lg bg-white dark:bg-zinc-900">
-            <div className={`bg-gradient-to-r ${stat.gradient} p-4`}>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-white">
-                  {stat.title}
-                </CardTitle>
-                <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+          <Card className="overflow-hidden border-0 rounded-2xl shadow-lg bg-white h-full">
+            <CardHeader
+              className={`p-0 h-3 bg-gradient-to-r ${stat.gradient}`}
+            />
+            <CardContent className="pt-6 pb-5 px-5">
+              <div className="flex items-start gap-4">
+                <div
+                  className={`${stat.iconBg} p-3 rounded-2xl flex items-center justify-center shadow-lg`}
+                >
                   {stat.icon}
                 </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500 mb-1">
+                    {stat.title}
+                  </p>
+                  <div className="text-3xl font-bold text-gray-800">
+                    {stat.value}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {stat.description}
+                  </p>
+                </div>
               </div>
-            </div>
-            <CardContent className="pt-4">
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                {stat.description}
-              </p>
             </CardContent>
           </Card>
         </motion.div>

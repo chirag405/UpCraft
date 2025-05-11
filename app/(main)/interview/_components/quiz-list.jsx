@@ -1,4 +1,3 @@
-// QuizList.jsx
 "use client";
 
 import { useState } from "react";
@@ -37,32 +36,30 @@ export default function QuizList({ assessments }) {
 
   if (!assessments?.length) {
     return (
-      <Card className="max-w-4xl mx-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-md rounded-xl mt-6">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
-            Interview History
-          </CardTitle>
-          <CardDescription className="text-zinc-500 dark:text-zinc-400">
+      <Card className="max-w-4xl mx-auto bg-white border border-sky-100 shadow-lg rounded-2xl mt-6 overflow-hidden">
+        <CardHeader className="pb-0 bg-gradient-to-r from-sky-400 to-blue-500 text-white">
+          <CardTitle className="text-xl font-bold">Interview History</CardTitle>
+          <CardDescription className="text-sky-100 mb-2">
             No interview assessments yet
           </CardDescription>
         </CardHeader>
-        <CardContent className="pt-4 pb-6">
-          <div className="flex flex-col items-center justify-center space-y-4 py-8">
-            <div className="rounded-full bg-indigo-50 dark:bg-indigo-900/20 p-4 border border-indigo-100 dark:border-indigo-800/30">
-              <Target className="h-10 w-10 text-indigo-500" />
+        <CardContent className="pt-8 pb-8">
+          <div className="flex flex-col items-center justify-center space-y-6 py-6">
+            <div className="rounded-full bg-sky-50 p-6 border-4 border-sky-100">
+              <Target className="h-12 w-12 text-sky-500" />
             </div>
             <div className="text-center space-y-2 max-w-sm">
-              <h3 className="text-lg font-medium">
+              <h3 className="text-xl font-bold text-gray-800">
                 Start your first interview
               </h3>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              <p className="text-gray-600">
                 Take a mock interview to practice your skills and track your
                 progress
               </p>
             </div>
             <Button
               onClick={() => router.push("/interview/mock")}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 border-0"
+              className="bg-gradient-to-r from-sky-400 to-blue-500 text-white hover:shadow-lg transition-all duration-300 px-6 py-2 text-lg font-medium rounded-xl border-0"
             >
               Start Mock Interview
             </Button>
@@ -73,46 +70,43 @@ export default function QuizList({ assessments }) {
   }
 
   const getScoreColorClass = (score) => {
-    if (score >= 80)
-      return "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20";
-    if (score >= 60)
-      return "text-blue-500 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20";
-    if (score >= 40)
-      return "text-amber-500 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20";
-    return "text-rose-500 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20";
+    if (score >= 80) return "text-emerald-600 bg-emerald-50 border-emerald-200";
+    if (score >= 60) return "text-sky-600 bg-sky-50 border-sky-200";
+    if (score >= 40) return "text-amber-600 bg-amber-50 border-amber-200";
+    return "text-rose-600 bg-rose-50 border-rose-200";
   };
 
   return (
     <>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
         <div>
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent mb-1">
+          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-blue-600 mb-2">
             Your Interview History
           </h2>
-          <p className="text-zinc-500 dark:text-zinc-400">
+          <p className="text-gray-600">
             Review past performance and track your progress
           </p>
         </div>
-        <div className="flex gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
+        <div className="flex gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:flex-none">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search interviews"
-              className="pl-9 h-10 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-indigo-500/30 focus:border-indigo-500"
+              className="pl-10 h-12 w-full md:w-64 rounded-xl border border-sky-100 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 focus:border-sky-300"
             />
           </div>
           <Button
             size="icon"
             variant="outline"
-            className="h-10 w-10 border-zinc-200 dark:border-zinc-800"
+            className="h-12 w-12 rounded-xl border-sky-100 hover:bg-sky-50 hover:border-sky-200"
           >
-            <Filter className="h-4 w-4" />
+            <Filter className="h-5 w-5 text-sky-500" />
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {assessments.map((assessment, index) => (
           <motion.div
             key={assessment.id || index}
@@ -120,83 +114,77 @@ export default function QuizList({ assessments }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: index * 0.1 }}
           >
-            <Card className="overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all shadow-sm hover:shadow-md rounded-xl">
-              <CardHeader className="pb-2">
+            <Card className="overflow-hidden bg-white border border-sky-100 hover:border-sky-300 transition-all duration-300 shadow-md hover:shadow-xl rounded-2xl">
+              <CardHeader className="pb-2 bg-gradient-to-r from-sky-50 to-blue-50">
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">
+                    <CardTitle className="text-lg text-gray-800">
                       Interview #{assessments.length - index}
                     </CardTitle>
-                    <CardDescription className="flex items-center mt-1 gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-zinc-400" />
+                    <CardDescription className="flex items-center mt-1 gap-1.5 text-gray-500">
+                      <Calendar className="h-3.5 w-3.5" />
                       <span>
                         {format(new Date(assessment.createdAt), "MMM d, yyyy")}
                       </span>
                     </CardDescription>
                   </div>
                   <div
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1 border ${getScoreColorClass(
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 border ${getScoreColorClass(
                       assessment.score
                     )}`}
                   >
                     {assessment.score >= 70 ? (
-                      <Trophy className="h-3.5 w-3.5" />
+                      <Trophy className="h-4 w-4" />
                     ) : (
-                      <Target className="h-3.5 w-3.5" />
+                      <Target className="h-4 w-4" />
                     )}
                     {assessment.score}% Score
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pb-4">
-                <div className="space-y-3">
-                  <div className="flex items-start gap-2.5 text-sm">
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-4 w-4 text-zinc-400" />
-                        <span className="text-zinc-600 dark:text-zinc-300">
-                          Duration:
-                        </span>
+              <CardContent className="py-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-1.5 bg-gray-50 p-3 rounded-xl">
+                      <div className="flex items-center gap-1.5 text-gray-600">
+                        <Clock className="h-4 w-4 text-sky-500" />
+                        <span className="text-sm">Duration</span>
                       </div>
-                      <div className="font-medium pl-5.5">
-                        {assessment.duration} minutes
+                      <div className="font-semibold text-gray-800">
+                        {assessment.duration} min
                       </div>
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-zinc-600 dark:text-zinc-300">
-                          Correct:
-                        </span>
+                    <div className="space-y-1.5 bg-gray-50 p-3 rounded-xl">
+                      <div className="flex items-center gap-1.5 text-gray-600">
+                        <CheckCircle className="h-4 w-4 text-emerald-500" />
+                        <span className="text-sm">Correct</span>
                       </div>
-                      <div className="font-medium pl-5.5">
-                        {assessment.correctAnswers} questions
+                      <div className="font-semibold text-gray-800">
+                        {assessment.correctAnswers}
                       </div>
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-1.5">
+                    <div className="space-y-1.5 bg-gray-50 p-3 rounded-xl">
+                      <div className="flex items-center gap-1.5 text-gray-600">
                         <XCircle className="h-4 w-4 text-rose-500" />
-                        <span className="text-zinc-600 dark:text-zinc-300">
-                          Incorrect:
-                        </span>
+                        <span className="text-sm">Incorrect</span>
                       </div>
-                      <div className="font-medium pl-5.5">
-                        {assessment.totalQuestions - assessment.correctAnswers}{" "}
-                        questions
+                      <div className="font-semibold text-gray-800">
+                        {assessment.totalQuestions - assessment.correctAnswers}
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-end gap-2 mt-2">
+
+                  <div className="flex justify-end gap-3 mt-4">
                     <Button
                       variant="outline"
-                      className="border-zinc-200 dark:border-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/20 dark:hover:text-indigo-400"
+                      className="border-sky-200 hover:bg-sky-50 hover:text-sky-700 text-sky-600"
                       size="sm"
                       onClick={() => setSelectedQuiz(assessment)}
                     >
                       View Details
                     </Button>
                     <Button
-                      className="bg-gradient-to-r from-indigo-500 to-purple-600 border-0 text-white hover:from-indigo-600 hover:to-purple-700"
+                      className="bg-gradient-to-r from-sky-400 to-blue-500 border-0 text-white hover:shadow-md transition-all duration-300"
                       size="sm"
                       onClick={() => router.push("/interview/mock")}
                     >
@@ -214,9 +202,9 @@ export default function QuizList({ assessments }) {
         open={Boolean(selectedQuiz)}
         onOpenChange={(open) => !open && setSelectedQuiz(null)}
       >
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800">
-          <DialogHeader>
-            <DialogTitle className="text-xl bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-white border-sky-100 rounded-2xl">
+          <DialogHeader className="bg-gradient-to-r from-sky-400 to-blue-500 -mx-6 -mt-6 px-6 py-4 rounded-t-2xl mb-4">
+            <DialogTitle className="text-xl font-bold text-white">
               Interview Results
             </DialogTitle>
           </DialogHeader>
